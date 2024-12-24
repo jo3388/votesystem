@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>投票系統</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>投票系統</h1>
+        
+        <!-- 新增組別區塊 -->
+        <div class="section">
+            <h2>新增投票組別</h2>
+            <div class="input-group">
+                <input type="text" id="groupName" placeholder="輸入組別名稱">
+                <button onclick="addGroup()">新增組別</button>
+            </div>
+        </div>
+
+        <!-- 投票區塊 -->
+        <div class="section">
+            <h2>投票區</h2>
+            <div class="input-group">
+                <input type="text" id="voterName" placeholder="請輸入您的名字">
+                <select id="groupSelect">
+                    <option value="">請選擇投票組別</option>
+                </select>
+                <textarea id="voterComment" placeholder="您的評論"></textarea>
+                <button onclick="submitVote()">投票</button>
+            </div>
+            <div id="votingArea">
+                <!-- 投票組別將在這裡動態生成 -->
+            </div>
+        </div>
+
+        <!-- 投票結果區塊 -->
+        <div class="section">
+            <h2>投票結果</h2>
+            <div id="results">
+                <!-- 結果將在這裡動態顯示 -->
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
