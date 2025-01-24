@@ -1,147 +1,97 @@
-// 儲存所有投票數據
-let votingData = {
-    groups: [],
-    votes: [],
-    voters: new Set() // 用於追踪已投票的人
-};
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google 試算表投票系統</title>
+</head>
+<body>
+  <h1>投票系統</h1>
+  
+  <div>
+    <label for="groupName">新增組別：</label>
+    <input type="text" id="groupName">
+    <button onclick="addGroup()">新增</button>
+  </div>
 
-// 新增組別
-function addGroup() {
-    const groupNameInput = document.getElementById('groupName');
-    const groupName = groupNameInput.value.trim();
-    
-    if (groupName === '') {
-        alert('請輸入組別名稱！');
+  <div>
+    <label for="groupSelect">選擇組別：</label>
+    <select id="groupSelect">
+      <option value="">請選擇投票組別</option>
+    </select>
+  </div>
+
+  <div>
+    <label for="voterName">您的名字：</label>
+    <input type="text" id="voterName">
+  </div>
+
+  <div>
+    <label for="voterComment">評論：</label>
+    <input type="text" id="voterComment">
+  </div>
+
+  <button onclick="submitVote()">提交投票</button>
+
+  <div id="results"></div>
+
+  <script>
+    const scriptUrl = "https://script.google.com/macros/s/your-script-id/exec"; // 替換為你的 Apps Script URL
+
+    async function addGroup() {
+      const groupName = document.getElementById("groupName").value.trim();
+      if (!groupName) {
+        alert("請輸入組別名稱！");
         return;
+      }
+
+      const response = await fetch(`${scriptUrl}?action=addGroup&groupName=${encodeURIComponent(groupName)}`, { method: "POST" });
+      const result = await response.json();
+
+      alert(result.message);
+      if (result.success) {
+        loadGroups();
+        document.getElementById("groupName").value = "";
+      }
     }
 
-    if (votingData.groups.includes(groupName)) {
-        alert('此組別已存在！');
-        return;
-    }
+    async function loadGroups() {
+      const response = await fetch(`${scriptUrl}?action=loadGroups`);
+      const groups = await response.json();
 
-    votingData.groups.push(groupName);
-    groupNameInput.value = '';
-    updateGroupSelect();
-    updateVotingArea();
-    saveData();
-}
-
-// 更新下拉選單
-function updateGroupSelect() {
-    const groupSelect = document.getElementById('groupSelect');
-    groupSelect.innerHTML = '<option value="">請選擇投票組別</option>';
-    
-    votingData.groups.forEach(group => {
-        const option = document.createElement('option');
+      const groupSelect = document.getElementById("groupSelect");
+      groupSelect.innerHTML = '<option value="">請選擇投票組別</option>';
+      groups.forEach(group => {
+        const option = document.createElement("option");
         option.value = group;
         option.textContent = group;
         groupSelect.appendChild(option);
-    });
-}
+      });
+    }
 
-// 更新投票區域
-function updateVotingArea() {
-    const votingArea = document.getElementById('votingArea');
-    votingArea.innerHTML = '';
-    updateResults();
-}
+    async function submitVote() {
+      const voterName = document.getElementById("voterName").value.trim();
+      const selectedGroup = document.getElementById("groupSelect").value;
+      const comment = document.getElementById("voterComment").value.trim();
 
-// 提交投票
-function submitVote() {
-    const voterName = document.getElementById('voterName').value.trim();
-    const selectedGroup = document.getElementById('groupSelect').value;
-    const comment = document.getElementById('voterComment').value.trim();
-    
-    if (!voterName) {
-        alert('請輸入您的名字！');
+      if (!voterName || !selectedGroup) {
+        alert("請填寫所有欄位！");
         return;
+      }
+
+      const response = await fetch(`${scriptUrl}?action=submitVote&voterName=${encodeURIComponent(voterName)}&group=${encodeURIComponent(selectedGroup)}&comment=${encodeURIComponent(comment)}`, { method: "POST" });
+      const result = await response.json();
+
+      alert(result.message);
+      if (result.success) {
+        document.getElementById("voterName").value = "";
+        document.getElementById("groupSelect").value = "";
+        document.getElementById("voterComment").value = "";
+      }
     }
 
-    if (!selectedGroup) {
-        alert('請選擇投票組別！');
-        return;
-    }
-
-    // 檢查是否已經投票
-    if (votingData.voters.has(voterName)) {
-        alert('此名字已經投過票了！');
-        return;
-    }
-
-    votingData.votes.push({
-        voter: voterName,
-        group: selectedGroup,
-        comment,
-        timestamp: new Date().toISOString()
-    });
-
-    votingData.voters.add(voterName); // 將投票者加入已投票名單
-
-    // 清空輸入欄位
-    document.getElementById('voterName').value = '';
-    document.getElementById('groupSelect').value = '';
-    document.getElementById('voterComment').value = '';
-    
-    updateResults();
-    saveData();
-    alert('投票成功！');
-}
-
-// 更新結果顯示
-function updateResults() {
-    const resultsDiv = document.getElementById('results');
-    resultsDiv.innerHTML = '';
-
-    // 計算每個組別的票數
-    const groupCounts = {};
-    votingData.groups.forEach(group => {
-        groupCounts[group] = votingData.votes.filter(vote => vote.group === group).length;
-    });
-
-    // 顯示每個組別的結果
-    for (const group in groupCounts) {
-        const groupResult = document.createElement('div');
-        groupResult.className = 'result-item';
-        
-        const votes = votingData.votes.filter(vote => vote.group === group);
-        const voteDetails = votes.map(vote => 
-            `<p><strong>${vote.voter}</strong>: ${vote.comment || '無評論'}</p>`
-        ).join('');
-
-        groupResult.innerHTML = `
-            <h3>${group}</h3>
-            <p>得票數: ${groupCounts[group]}</p>
-            <div class="vote-details">
-                ${voteDetails}
-            </div>
-        `;
-        resultsDiv.appendChild(groupResult);
-    }
-}
-
-// 保存數據到 localStorage
-function saveData() {
-    const dataToSave = {
-        ...votingData,
-        voters: Array.from(votingData.voters) // 轉換 Set 為 Array 以便儲存
-    };
-    localStorage.setItem('votingData', JSON.stringify(dataToSave));
-}
-
-// 載入數據
-function loadData() {
-    const savedData = localStorage.getItem('votingData');
-    if (savedData) {
-        const parsedData = JSON.parse(savedData);
-        votingData = {
-            ...parsedData,
-            voters: new Set(parsedData.voters) // 將儲存的 Array 轉回 Set
-        };
-        updateGroupSelect();
-        updateVotingArea();
-    }
-}
-
-// 頁面載入時初始化
-document.addEventListener('DOMContentLoaded', loadData);
+    // 初次加載時載入組別
+    loadGroups();
+  </script>
+</body>
+</html>
